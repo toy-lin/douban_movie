@@ -1,0 +1,8 @@
+code/
+__pycache__/
+captcha.jpg
+login/__pycache__/
+page_parser/__pycache__/
+storage/__pycache__/
+utils/__pycache__/
+.vscode/
