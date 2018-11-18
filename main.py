@@ -17,6 +17,8 @@ import random
 config = configparser.ConfigParser()
 config.read('config.ini')
 
+use_proxy = False
+
 # 获取模拟登录后的cookies
 cookie_helper = CookiesHelper.CookiesHelper(
     config['douban']['user'],
@@ -42,8 +44,10 @@ def scratchByQueue(start_id):
         movie = get_movie_with_id(id)
 
         if not movie:
+            readed_movie_ids.remove(id)
             print('did not get info from this movie(id=%s)' % id)
-            Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
+            if not use_proxy:
+                Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
             continue
         next_movie_ids = movie.get('next_movie_ids',[])
         for mid in next_movie_ids:
@@ -56,7 +60,8 @@ def scratchByQueue(start_id):
         movie['douban_id'] = id
         db_helper.insert_movie(movie)
 
-        Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
+        if not use_proxy:
+            Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
 
 def in_db(id):
     return db_helper.is_movie_id_exists(id)
@@ -75,14 +80,16 @@ def scratchByIteratingID():
         
         # 如果获取的数据为空，延时以减轻对目标服务器的压力,并跳过。
         if not movie:
-            Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
+            if not use_proxy:
+                Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
             continue
 
         # 豆瓣数据有效，写入数据库
         movie['douban_id'] = id
         db_helper.insert_movie(movie)
 
-        Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
+        if not use_proxy:
+            Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
 
 def get_movie_with_id(id):
     headers = {'User-Agent': random.choice(constants.USER_AGENT)}
@@ -95,7 +102,7 @@ def get_movie_with_id(id):
                 constants.URL_PREFIX + str(id),
                 headers=headers,
                 #cookies=cookies,
-                proxies=constants.proxies
+                proxies=constants.proxies if use_proxy else None
             )
             if not r:
                 break
