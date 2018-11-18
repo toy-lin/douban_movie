@@ -11,6 +11,7 @@ from page_parser import MovieParser
 from utils import Utils
 from storage import DbHelper
 from queue import Queue
+import random
 
 # 读取配置文件信息
 config = configparser.ConfigParser()
@@ -31,7 +32,7 @@ db_helper = DbHelper.DbHelper()
 readed_movie_ids = set()
 
 def scratchByQueue(start_id):
-    print("Start from id : %s\n" % start_id)
+    print("Start from id : %s" % start_id)
     q = Queue()
     q.put(start_id)
 
@@ -49,7 +50,7 @@ def scratchByQueue(start_id):
                 readed_movie_ids.add(mid)
                 q.put(mid)
             else:
-                print('movie(id=%s) is alread scratched or in the queue.')
+                print('movie(id=%s) is alread scratched or in the queue.' % mid)
 
         movie['douban_id'] = id
         db_helper.insert_movie(movie)
@@ -113,7 +114,7 @@ if not start_id:
     start_id = int(config['common']['start_id'])
 r_start = int(config['common']['start_id'])
 r_end = int(config['common']['end_id'])
-for i in range(50):
+for i in range(500):
     print('%d-th round to scratch from movie(id=%s)' % (i,start_id))
     scratchByQueue(start_id)
     start_id = str(random.randrange(r_start,stop=r_end))
