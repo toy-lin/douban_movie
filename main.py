@@ -98,7 +98,8 @@ def get_movie_with_id(id):
             )
             if not r:
                 break
-        except:
+        except IOError as e:
+            print('request exception : %s' % str(e))
             Utils.Utils.delay(5, 10)
 
     r.encoding = 'utf-8'
