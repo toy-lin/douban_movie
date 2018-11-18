@@ -45,7 +45,7 @@ def scratchByQueue(start_id):
             print('did not get info from this movie(id=%s)' % id)
             Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
             continue
-        next_movie_ids = movie['next_movie_ids']
+        next_movie_ids = movie.get('next_movie_ids',[])
         for mid in next_movie_ids:
             if mid not in readed_movie_ids and not in_db(mid):
                 readed_movie_ids.add(mid)
