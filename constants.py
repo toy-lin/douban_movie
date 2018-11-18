@@ -47,12 +47,12 @@ URL_PREFIX = 'https://movie.douban.com/subject/'
 这里用到了阿布云代理动态版。使用影梭或者其他代理，甚至不用代理也可以
 """
 # 代理服务器
-proxyHost = "proxy.abuyun.com"
+proxyHost = "http-dyn.abuyun.com"
 proxyPort = "9020"
 
 # 代理隧道验证信息
-proxyUser = "HT1LX50X8R4P0I8D"
-proxyPass = "1133BD889583B72A"
+proxyUser = "H10S14SX6NH4376D"
+proxyPass = "CA90999A976FB7CE"
 
 proxyMeta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
     "host": proxyHost,

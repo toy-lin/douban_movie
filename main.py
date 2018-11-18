@@ -22,8 +22,8 @@ cookie_helper = CookiesHelper.CookiesHelper(
     config['douban']['user'],
     config['douban']['password']
 )
-cookies = cookie_helper.get_cookies()
-print(cookies)
+#cookies = cookie_helper.get_cookies()
+#print(cookies)
 
 # 实例化爬虫类和数据库连接工具类
 movie_parser = MovieParser.MovieParser()
@@ -94,7 +94,8 @@ def get_movie_with_id(id):
             r = requests.get(
                 constants.URL_PREFIX + str(id),
                 headers=headers,
-                cookies=cookies
+                #cookies=cookies,
+                proxies=constants.proxies
             )
             if not r:
                 break
