@@ -30,13 +30,10 @@ db_helper = DbHelper.DbHelper()
 
 readed_movie_ids = set()
 
-def scratchByQueue():
-    START_ID = get_last_end_id()
-    if not START_ID:
-        START_ID = int(config['common']['start_id'])
-    print("Start from id : %s\n" % START_ID)
+def scratchByQueue(start_id):
+    print("Start from id : %s\n" % start_id)
     q = Queue()
-    q.put(str(START_ID))
+    q.put(start_id)
 
     while not q.empty():
         print("Current queue length : " + str(q.qsize()))
@@ -51,6 +48,8 @@ def scratchByQueue():
             if mid not in readed_movie_ids and not in_db(mid):
                 readed_movie_ids.add(mid)
                 q.put(mid)
+            else:
+                print('movie(id=%s) is alread scratched or in the queue.')
 
         movie['douban_id'] = id
         db_helper.insert_movie(movie)
@@ -108,11 +107,16 @@ def get_movie_with_id(id):
     movie = movie_parser.extract_movie_info()
     return movie
 
-
-
 # 通过ID进行遍历
-scratchByQueue()
-
+start_id = get_last_end_id()
+if not start_id:
+    start_id = int(config['common']['start_id'])
+r_start = int(config['common']['start_id'])
+r_end = int(config['common']['end_id'])
+for i in range(50):
+    print('%d-th round to scratch from movie(id=%s)' (i,start_id))
+    scratchByQueue(start_id)
+    start_id = str(random.randrange(r_start,stop=r_end))
 
 # 释放资源
 movie_parser = None

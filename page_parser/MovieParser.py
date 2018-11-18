@@ -171,12 +171,12 @@ class MovieParser:
         try:
             movies_info = self.__soup.find('div',{'class':'recommendations-bd'})
             urls = movies_info.findAll('a')
-            result = []
+            result = set()
             for url in urls:
                 movie_id = re.search('[0-9]+',url.attrs['href']).group()
                 if movie_id:
-                    result.append(movie_id)
-            self.__movie['next_movie_ids'] = result
+                    result.add(movie_id)
+            self.__movie['next_movie_ids'] = list(result)
         except:
             pass
 
