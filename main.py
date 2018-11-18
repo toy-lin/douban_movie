@@ -105,7 +105,7 @@ def get_movie_with_id(id):
     r.encoding = 'utf-8'
 
     # 提示当前到达的id(log)
-    print('scratching movie id: ' + id)
+    print('scratching movie id: ' + str(id))
 
     # 提取豆瓣数据
     movie_parser.set_html_doc(r.text)
