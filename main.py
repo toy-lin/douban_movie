@@ -92,7 +92,7 @@ def get_movie_with_id(id):
     while not r:
         try:
             r = requests.get(
-                constants.URL_PREFIX + id,
+                constants.URL_PREFIX + str(id),
                 headers=headers,
                 cookies=cookies
             )
