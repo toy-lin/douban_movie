@@ -44,7 +44,8 @@ def scratchByQueue(start_id):
         movie = get_movie_with_id(id)
 
         if not movie:
-            readed_movie_ids.remove(id)
+            if id in readed_movie_ids:
+                readed_movie_ids.remove(id)
             print('did not get info from this movie(id=%s)' % id)
             if not use_proxy:
                 Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
