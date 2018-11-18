@@ -114,7 +114,7 @@ if not start_id:
 r_start = int(config['common']['start_id'])
 r_end = int(config['common']['end_id'])
 for i in range(50):
-    print('%d-th round to scratch from movie(id=%s)' (i,start_id))
+    print('%d-th round to scratch from movie(id=%s)' % (i,start_id))
     scratchByQueue(start_id)
     start_id = str(random.randrange(r_start,stop=r_end))
 
