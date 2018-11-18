@@ -22,8 +22,8 @@ cookie_helper = CookiesHelper.CookiesHelper(
     config['douban']['user'],
     config['douban']['password']
 )
-#cookies = cookie_helper.get_cookies()
-#print(cookies)
+cookies = cookie_helper.get_cookies()
+print(cookies)
 
 # 实例化爬虫类和数据库连接工具类
 movie_parser = MovieParser.MovieParser()
@@ -42,7 +42,7 @@ def scratchByQueue(start_id):
         movie = get_movie_with_id(id)
 
         if not movie:
-            print('cannnot get info from this movie(id=%s)' % id)
+            print('did not get info from this movie(id=%s)' % id)
             Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
             continue
         next_movie_ids = movie['next_movie_ids']
@@ -93,9 +93,11 @@ def get_movie_with_id(id):
         try:
             r = requests.get(
                 constants.URL_PREFIX + id,
-                headers=headers
-                #cookies=cookies
+                headers=headers,
+                cookies=cookies
             )
+            if not r:
+                break
         except:
             Utils.Utils.delay(5, 10)
 
