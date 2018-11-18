@@ -20,6 +20,7 @@ class CookiesHelper:
     __captcha_id = ''
     __captcha_solution = ''
     __is_captcha_exist = True
+    __captcha_url = ''
 
     def __init__(self, username, password):
         self.__user_name = username
@@ -39,7 +40,7 @@ class CookiesHelper:
             return
 
         captcha_url = captcha[0]['src']
-
+        self.__captcha_url = captcha_url
         # 获取验证码的id
         self.__captcha_id = captcha_url[
                                 captcha_url.find('=') + 1: captcha_url.find(':', 6) + 3
@@ -61,7 +62,7 @@ class CookiesHelper:
             self.__password = input()
 
         if self.__is_captcha_exist:
-            print('请输入图中的验证码:')
+            print('请输入图中的验证码(%s):' % self.__captcha_url)
             Image.open('captcha.jpg').show()
             self.__captcha_solution = input()
 
