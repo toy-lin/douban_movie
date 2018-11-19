@@ -10,10 +10,13 @@ from login import CookiesHelper
 from page_parser import MovieParser
 from utils import Utils
 from storage import DbHelper
-from queue import Queue
+from multiprocessing import Queue
 import random
 import logging
 import time
+import threading
+
+lock = threading.Lock()
 
 logger = logging.getLogger()
 logger.setLevel(logging.NOTSET)
@@ -32,6 +35,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 use_proxy = False
+use_mul_thread = False
 
 # 获取模拟登录后的cookies
 cookie_helper = CookiesHelper.CookiesHelper(
@@ -47,34 +51,40 @@ db_helper = DbHelper.DbHelper()
 
 readed_movie_ids = set()
 
-def scratchByQueue(start_id):
-    logger.debug("Scratch from id : %s" % start_id)
-    q = Queue()
-    q.put(start_id)
-
-    while not q.empty():
+def scratchByQueue():
+    while True:
         logger.debug("Current queue length : " + str(q.qsize()))
-        id = q.get()
+        try:
+            id = q.get(timeout=20)
+        except:
+            logger.warn('queue empty, exist thread: %s' % threading.current_thread().name)
+            break
+        logger.debug("Scratch from id : %s" % id)
         movie = get_movie_with_id(id)
 
         if not movie:
+            logger.debug('did not get info from this movie(id=%s)' % id)
             if id in readed_movie_ids:
                 readed_movie_ids.remove(id)
-            logger.debug('did not get info from this movie(id=%s)' % id)
             if not use_proxy:
                 Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
             continue
         next_movie_ids = movie.get('next_movie_ids',[])
         for mid in next_movie_ids:
             i = 0
-            if mid not in readed_movie_ids and not in_db(mid):
-                readed_movie_ids.add(mid)
-                q.put(mid)
-            else:
-                i += 1
-        logger.debug('%d movies is alread scratched or in the queue.' % i)
+            if lock.acquire(1):
+                if mid not in readed_movie_ids and not in_db(mid):
+                    readed_movie_ids.add(mid)
+                    q.put(mid)
+                else:
+                    i += 1
+                lock.release()
+        if i > 0 :
+            logger.debug('%d movies is alread scratched or in the queue.' % i)
         movie['douban_id'] = id
-        db_helper.insert_movie(movie)
+        if lock.acquire(1):
+            db_helper.insert_movie(movie)
+            lock.release()
 
         if not use_proxy:
             Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
@@ -128,9 +138,6 @@ def get_movie_with_id(id):
 
     r.encoding = 'utf-8'
 
-    # 提示当前到达的id(log)
-    logger.debug('scratching movie id: ' + str(id))
-
     # 提取豆瓣数据
     movie_parser.set_html_doc(r.text)
     movie = movie_parser.extract_movie_info()
@@ -140,12 +147,16 @@ def get_movie_with_id(id):
 start_id = get_last_end_id()
 if not start_id:
     start_id = int(config['common']['start_id'])
+
+q = Queue()
+q.put(start_id)
+
 r_start = int(config['common']['start_id'])
 r_end = int(config['common']['end_id'])
-for i in range(500):
-    logger.debug('%d-th round to scratch from movie(id=%s)' % (i,start_id))
-    scratchByQueue(start_id)
-    start_id = str(random.randrange(r_start,stop=r_end))
+for i in range(5 if use_mul_thread else 1):
+    t = threading.Thread(target=scratchByQueue,name='scratch thread')
+    t.start()
+    t.join()
 
 # 释放资源
 movie_parser = None
