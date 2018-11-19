@@ -153,9 +153,14 @@ q.put(start_id)
 
 r_start = int(config['common']['start_id'])
 r_end = int(config['common']['end_id'])
+
+thread_list = []
 for i in range(5 if use_mul_thread else 1):
     t = threading.Thread(target=scratchByQueue,name='scratch thread %d' % i)
     t.start()
+    thread_list.append(t)
+    
+for t in thread_list:
     t.join()
 
 # 释放资源
