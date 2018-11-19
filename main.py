@@ -12,6 +12,20 @@ from utils import Utils
 from storage import DbHelper
 from queue import Queue
 import random
+import logging
+import time
+
+logger = logging.getLogger()
+logger.setLevel(logging.NOTSET)
+rq = time.strftime("%Y-%m-%d %H %M", time.localtime(time.time()))
+log_file = '/home/linkaitao/douban.log'
+fh = logging.FileHandler(log_file,mode='w')
+fh.setLevel(logging.NOTSET)
+
+formatter = logging.Formatter("%(asctime)s -%(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+
 
 # 读取配置文件信息
 config = configparser.ConfigParser()
@@ -25,7 +39,7 @@ cookie_helper = CookiesHelper.CookiesHelper(
     config['douban']['password']
 )
 #cookies = cookie_helper.get_cookies()
-#print(cookies)
+#logger.debug(cookies)
 
 # 实例化爬虫类和数据库连接工具类
 movie_parser = MovieParser.MovieParser()
@@ -34,30 +48,31 @@ db_helper = DbHelper.DbHelper()
 readed_movie_ids = set()
 
 def scratchByQueue(start_id):
-    print("Start from id : %s" % start_id)
+    logger.debug("Scratch from id : %s" % start_id)
     q = Queue()
     q.put(start_id)
 
     while not q.empty():
-        print("Current queue length : " + str(q.qsize()))
+        logger.debug("Current queue length : " + str(q.qsize()))
         id = q.get()
         movie = get_movie_with_id(id)
 
         if not movie:
             if id in readed_movie_ids:
                 readed_movie_ids.remove(id)
-            print('did not get info from this movie(id=%s)' % id)
+            logger.debug('did not get info from this movie(id=%s)' % id)
             if not use_proxy:
                 Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
             continue
         next_movie_ids = movie.get('next_movie_ids',[])
         for mid in next_movie_ids:
+            i = 0
             if mid not in readed_movie_ids and not in_db(mid):
                 readed_movie_ids.add(mid)
                 q.put(mid)
             else:
-                print('movie(id=%s) is alread scratched or in the queue.' % mid)
-
+                i += 1
+        logger.debug('%d movies is alread scratched or in the queue.' % i)
         movie['douban_id'] = id
         db_helper.insert_movie(movie)
 
@@ -108,13 +123,13 @@ def get_movie_with_id(id):
             if not r:
                 break
         except IOError as e:
-            print('request exception : %s' % str(e))
+            logger.debug('request exception : %s' % str(e))
             Utils.Utils.delay(5, 10)
 
     r.encoding = 'utf-8'
 
     # 提示当前到达的id(log)
-    print('scratching movie id: ' + str(id))
+    logger.debug('scratching movie id: ' + str(id))
 
     # 提取豆瓣数据
     movie_parser.set_html_doc(r.text)
@@ -128,7 +143,7 @@ if not start_id:
 r_start = int(config['common']['start_id'])
 r_end = int(config['common']['end_id'])
 for i in range(500):
-    print('%d-th round to scratch from movie(id=%s)' % (i,start_id))
+    logger.debug('%d-th round to scratch from movie(id=%s)' % (i,start_id))
     scratchByQueue(start_id)
     start_id = str(random.randrange(r_start,stop=r_end))
 
