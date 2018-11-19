@@ -59,7 +59,7 @@ def scratchByQueue():
         except:
             logger.warn('queue empty, exist thread: %s' % threading.current_thread().name)
             break
-        logger.debug("Scratch from id : %s" % id)
+        logger.debug("Scratch from id : %s in thread : %s" % (id,threading.current_thread().name))
         movie = get_movie_with_id(id)
 
         if not movie:
