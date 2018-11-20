@@ -18,8 +18,8 @@ class DouBanMovieSpider(object):
     def __init__(self, config, start_id):
         # a dict of cookies
         self.cookies = None
-        self.thread_count = config['spider']['thread_count']
-        self.network_max_try_times = config['network']['max_try_times']
+        self.thread_count = int(config['spider']['thread_count'])
+        self.network_max_try_times = int(config['network']['max_try_times'])
 
         self.q = Queue()
         self.q.put(start_id)
@@ -138,7 +138,7 @@ class DouBanMovieSpider(object):
         return movie
 
     def login_if_necessary(self, config):
-        login_enable = config['login_douban']['enable'] == 1
+        login_enable = int(config['login_douban']['enable']) == 1
         if not login_enable:
             self.logger.debug('douban login enable : %s' % str(login_enable))
             return
