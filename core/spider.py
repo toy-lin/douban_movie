@@ -34,6 +34,7 @@ class DouBanMovieSpider(object):
         self.proxy = proxy.AbuyunProxy(config)
         self.store_lock = threading.Lock()
         self.parser_lock = threading.Lock()
+        self.request_lock = threading.Lock()
 
         self.thread_list = []
 
@@ -69,7 +70,7 @@ class DouBanMovieSpider(object):
                     if id in self.movie_id_in_queue:
                         self.movie_id_in_queue.remove(id)
                     self.store_lock.release()
-                    
+
                 if not self.proxy.enable:
                     Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
                 continue
@@ -107,12 +108,14 @@ class DouBanMovieSpider(object):
         while not r:
             try:
                 try_times += 1
-                r = requests.get(
-                    constants.URL_PREFIX + str(id),
-                    headers=headers,
-                    cookies=self.cookies,
-                    proxies=self.proxy.get()
-                )
+                if self.request_lock.acquire():
+                    r = requests.get(
+                        constants.URL_PREFIX + str(id),
+                        headers=headers,
+                        cookies=self.cookies,
+                        proxies=self.proxy.get()
+                    )
+                    self.request_lock.release()
 
                 if not r:
                     if try_times <= self.network_max_try_times:
