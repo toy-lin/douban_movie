@@ -109,7 +109,7 @@ class DouBanMovieSpider(object):
                     constants.URL_PREFIX + str(id),
                     headers=headers,
                     cookies=self.cookies,
-                    proxies=self.proxy
+                    proxies=self.proxy.get()
                 )
 
                 if not r:

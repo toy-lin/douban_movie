@@ -21,8 +21,8 @@ class AbuyunProxy(object):
             "https": proxy_meta,
         }
     
-    def get(self,key):
-        self.proxy.get(key)
+    def get(self):
+        return self.proxy
 
     def __str__(self):
         return self.proxy
