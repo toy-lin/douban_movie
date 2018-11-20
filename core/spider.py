@@ -135,6 +135,7 @@ class DouBanMovieSpider(object):
         if self.parser_lock.acquire():
             self.movie_parser.set_html_doc(r.text)
             movie = self.movie_parser.extract_movie_info()
+            self.parser_lock.release()
         return movie
 
     def login_if_necessary(self, config):
