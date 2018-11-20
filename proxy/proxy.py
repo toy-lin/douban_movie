@@ -1,7 +1,7 @@
 class AbuyunProxy(object):
     def __init__(self, config):
         config_proxy = config['proxy']
-        self.enable = config_proxy['enable'] == 1
+        self.enable = int(config_proxy['enable']) == 1
         if not self.enable:
             self.proxy = None
             return
