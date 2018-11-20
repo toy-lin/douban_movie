@@ -65,9 +65,11 @@ class DouBanMovieSpider(object):
             if not movie:
                 self.logger.debug('did not get info from this movie(id=%s)' % id)
 
-                if id in self.movie_id_in_queue:
-                    self.movie_id_in_queue.remove(id)
-
+                if self.store_lock.acquire():
+                    if id in self.movie_id_in_queue:
+                        self.movie_id_in_queue.remove(id)
+                    self.store_lock.release()
+                    
                 if not self.proxy.enable:
                     Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
                 continue
