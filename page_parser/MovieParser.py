@@ -268,5 +268,6 @@ class MovieParser:
         self.__get_cover_url()
         self.__get_next_movie_ids()
 
-        return self.__movie
+        movie = self.__movie.copy()
+        return movie
 
