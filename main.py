@@ -21,7 +21,7 @@ start_id = db_helper.get_last_movie_id()
 db_helper.close_db()
 # if database is empty , use the movie id in config.ini as start_id
 if not start_id:
-    start_id = int(config['common']['start_id'])
+    start_id = config['common']['start_id']
 
 spider = DouBanMovieSpider(config, start_id)
 spider.start()

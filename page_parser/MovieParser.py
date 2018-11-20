@@ -267,10 +267,6 @@ class MovieParser:
         self.__get_scriptwriters()
         self.__get_cover_url()
         self.__get_next_movie_ids()
-
-        movie = self.__movie.copy()
-        nexts = movie.get('next_movie_ids',None)
-        if nexts:
-            movie['next_movie_ids'] = nexts.copy()
-        return movie
+        
+        return self.__movie
 

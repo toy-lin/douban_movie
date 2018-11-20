@@ -1,6 +1,6 @@
 import random
 import threading
-from multiprocessing import Queue
+from queue import Queue
 
 import requests
 
@@ -21,20 +21,20 @@ class DouBanMovieSpider(object):
         self.thread_count = int(config['spider']['thread_count'])
         self.network_max_try_times = int(config['network']['max_try_times'])
 
-        self.q = Queue()
-        self.q.put(start_id)
+        self.movie_id_in_queue = set()
+        self.queue = Queue()
+        self.queue.put(start_id)
+        self.movie_id_in_queue.add(start_id)
 
         self.logger = Loggers.get_logger(config)
         self.db_helper = DbHelper.DbHelper()
-        self.movie_parser = MovieParser.MovieParser()
 
         self.login_if_necessary(config)
-        self.movie_id_in_queue = set()
+        
 
         self.proxy = proxy.AbuyunProxy(config)
         self.store_lock = threading.Lock()
-        self.parser_lock = threading.Lock()
-        self.request_lock = threading.Lock()
+        self.db_lock = threading.Lock()
 
         self.thread_list = []
 
@@ -53,22 +53,23 @@ class DouBanMovieSpider(object):
 
     def scratch_movie_info(self):
         while True:
-            self.logger.debug("Current queue length : " + str(self.q.qsize()))
+            self.logger.debug("Current queue length : " + str(self.queue.qsize()))
+            id_scratch = None
             try:
-                id = self.q.get(timeout=20)
+                id_scratch = self.queue.get(timeout=20)
             except:
                 self.logger.warning('queue empty, exist thread: %s' % threading.current_thread().name)
                 break
 
-            self.logger.debug("Scratch from id : %s in thread : %s" % (id, threading.current_thread().name))
-            movie = self.get_movie_by_id(id)
+            self.logger.debug("Scratch from id : %s in thread : %s" % (id_scratch, threading.current_thread().name))
+            movie = self.get_movie_by_id(id_scratch)
 
             if not movie:
-                self.logger.debug('did not get info from this movie(id=%s)' % id)
+                self.logger.debug('did not get info from this movie(id=%s)' % id_scratch)
 
                 if self.store_lock.acquire():
-                    if id in self.movie_id_in_queue:
-                        self.movie_id_in_queue.remove(id)
+                    if id_scratch in self.movie_id_in_queue:
+                        self.movie_id_in_queue.remove(id_scratch)
                     self.store_lock.release()
 
                 if not self.proxy.enable:
@@ -77,22 +78,18 @@ class DouBanMovieSpider(object):
 
             next_movie_ids = movie.get('next_movie_ids', [])
 
-            i = 0
-            if self.store_lock.acquire():
-                for mid in next_movie_ids:
-                    if mid not in self.movie_id_in_queue and not self.movie_exist_in_db(mid):
-                        self.movie_id_in_queue.add(id)
-                        self.q.put(mid)
-                    else:
-                        i += 1
-                self.store_lock.release()
-            if i > 0:
-                self.logger.debug('%d movies is already scratched or in the queue.' % i)
+            if len(next_movie_ids) > 0 :
+                if self.store_lock.acquire():
+                    for mid in next_movie_ids:
+                        if mid not in self.movie_id_in_queue:
+                            self.logger.debug('add %s to queue(len=%d)' % (mid,len(self.movie_id_in_queue)))
+                            self.movie_id_in_queue.add(mid)
+                            self.queue.put(mid)
+                    self.store_lock.release()
 
-            movie['douban_id'] = id
-            if self.store_lock.acquire():
+            if self.db_lock.acquire():
                 self.db_helper.insert_movie(movie)
-                self.store_lock.release()
+                self.db_lock.release()
 
             # if proxy is enable , we won't wait for seconds because the proxy will change IP very frequently
             if not self.proxy.enable:
@@ -108,14 +105,12 @@ class DouBanMovieSpider(object):
         while not r:
             try:
                 try_times += 1
-                if self.request_lock.acquire():
-                    r = requests.get(
-                        constants.URL_PREFIX + str(id),
-                        headers=headers,
-                        cookies=self.cookies,
-                        proxies=self.proxy.get()
-                    )
-                    self.request_lock.release()
+                r = requests.get(
+                    constants.URL_PREFIX + str(id),
+                    headers=headers,
+                    cookies=self.cookies,
+                    proxies=self.proxy.get()
+                )
 
                 if not r:
                     if try_times <= self.network_max_try_times:
@@ -136,11 +131,10 @@ class DouBanMovieSpider(object):
         r.encoding = 'utf-8'
 
         # 提取电影数据
-        movie = None
-        if self.parser_lock.acquire():
-            self.movie_parser.set_html_doc(r.text)
-            movie = self.movie_parser.extract_movie_info()
-            self.parser_lock.release()
+        movie_parser = MovieParser.MovieParser()
+        movie_parser.set_html_doc(r.text)
+        movie = movie_parser.extract_movie_info()
+        movie['douban_id'] = id
         return movie
 
     def login_if_necessary(self, config):
