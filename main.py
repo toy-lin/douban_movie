@@ -6,9 +6,7 @@ import configparser
 import threading
 
 from core.spider import DouBanMovieSpider
-from login import CookiesHelper
 from storage import DbHelper
-from utils import Loggers
 
 lock = threading.Lock()
 parser_lock = threading.Lock()
@@ -17,24 +15,11 @@ parser_lock = threading.Lock()
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-# 默认的日志输出
-logger = Loggers.get_logger(config)
-
-# 获取模拟登录后的cookies
-cookie_helper = CookiesHelper.CookiesHelper(
-    config['douban']['user'],
-    config['douban']['password']
-)
-
-# 模拟用户登录
-# cookies = cookie_helper.get_cookies()
-# logger.debug(cookies)
-
-# 实例化爬虫类和数据库连接工具类
+# if database is not empty, use the last movie id in the database as start_id
 db_helper = DbHelper.DbHelper()
 start_id = db_helper.get_last_movie_id()
 db_helper.close_db()
-
+# if database is empty , use the movie id in config.ini as start_id
 if not start_id:
     start_id = int(config['common']['start_id'])
 
