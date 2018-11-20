@@ -134,7 +134,8 @@ class DouBanMovieSpider(object):
         movie_parser = MovieParser.MovieParser()
         movie_parser.set_html_doc(r.text)
         movie = movie_parser.extract_movie_info()
-        movie['douban_id'] = id
+        if movie:
+            movie['douban_id'] = id
         return movie
 
     def login_if_necessary(self, config):
