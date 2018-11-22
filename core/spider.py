@@ -66,11 +66,7 @@ class DouBanMovieSpider(object):
 
             if not movie:
                 self.logger.debug('did not get info from this movie(id=%s)' % id_scratch)
-
-                if self.store_lock.acquire():
-                    if id_scratch in self.movie_id_in_queue:
-                        self.movie_id_in_queue.remove(id_scratch)
-                    self.store_lock.release()
+                self.queue.put(id_scratch)
 
                 if not self.proxy.enable:
                     Utils.Utils.delay(constants.DELAY_MIN_SECOND, constants.DELAY_MAX_SECOND)
@@ -81,10 +77,11 @@ class DouBanMovieSpider(object):
             if len(next_movie_ids) > 0 :
                 if self.store_lock.acquire():
                     for mid in next_movie_ids:
-                        if mid not in self.movie_id_in_queue:
-                            self.logger.debug('add %s to queue(len=%d)' % (mid,len(self.movie_id_in_queue)))
-                            self.movie_id_in_queue.add(mid)
-                            self.queue.put(mid)
+                        if mid in self.movie_id_in_queue:
+                            continue
+                        self.logger.debug('add %s to queue(len=%d)' % (mid,len(self.movie_id_in_queue)))
+                        self.movie_id_in_queue.add(mid)
+                        self.queue.put(mid)
                     self.store_lock.release()
 
             if self.db_lock.acquire():
